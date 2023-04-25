@@ -1,24 +1,28 @@
-var ballX = 50, ballY = 50;
 var running = false;
-var wind = 50;
+// var vX = 0;
+// var vY = 0;
+// var aX = 0;
+// var aY = 0;
 
 var canvas, canvasContext;
 
-window.onload = function() {
+window.onload = function () {
     canvas = document.getElementById('scene');
     canvasContext = canvas.getContext('2d');
 
     let gameController = new GameController(canvasContext);
 
-    let inputWind = document.getElementById('inputWind'),
-        inputMass = document.getElementById('inputMass');
+    let inputVx = document.getElementById('inputVx');
+        inputVy = document.getElementById('inputVy');
+        inputAx = document.getElementById('inputAx');
+        inputAy = document.getElementById('inputAy');
 
     var isDragging = false;
 
     document.getElementById('buttonStart').addEventListener('click', function () {
         running = true;
-        wind = parseInt(inputWind.value);
-        gameController.ball.mass = parseInt(inputMass.value);
+        gameController.ball.vX = parseInt(inputVx.value);
+        gameController.ball.vY = parseInt(inputVy.value);
         gameController.ball.lastTick = 0;
         gameController.render();
     });
@@ -26,24 +30,19 @@ window.onload = function() {
     canvas.addEventListener('mousedown', function () {
         isDragging = true;
     });
-    
+
     canvas.addEventListener('mousemove', function (e) {
-        if (isDragging == true && !running) {
-            gameController.ball.x = e.clientX - gameController.ball.radius / 2;
-            gameController.ball.y = e.clientY - gameController.ball.radius / 2;
+        if (isDragging == true ) {
+            gameController.ball.x = e.clientX - gameController.ball.radius;
+            gameController.ball.y = e.clientY - gameController.ball.radius;
 
             gameController.render();
         }
     });
-    
+
     canvas.addEventListener('mouseup', function () {
         isDragging = false;
     });
-}
-
-function moveEverything() {
-    // move ball
-    ballY += 2;
 }
 
 function drawEverything() {
@@ -75,22 +74,22 @@ function GameController(ctx) {
             self = this,
             ball = this.ball;
 
-
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         this.ball.render();
-        
-        if (running) {
-            ball.dY += ball.mass / 1000 * 9.81;
 
-            if (ball.x + ball.radius / 2 >= canvas.width) {
-                ball.x = canvas.width - ball.radius / 2;
+        if (running) {
+            // ball.dY = pixelToMeter(ball.dY);
+
+            if (ball.x + ball.radius >= canvas.width) {
+                ball.x = canvas.width - ball.radius;
             }
 
-            if (ball.y + ball.radius / 2 >= canvas.height) {
-                ball.y = canvas.height - ball.radius / 2;
-                ball.dY = 0;
+            if (ball.y + ball.radius >= canvas.height) {
+                ball.y = canvas.height - ball.radius;
+                ball.vY = 0;
+                ball.aY = 0;
             }
 
             window.requestAnimationFrame(function () {
@@ -103,21 +102,24 @@ function GameController(ctx) {
 }
 
 function Ball(ctx) {
-    this.x = 0;
-    this.y = 0;
-    this.dX = 0;
-    this.dY = 0;
-    this.radius = 8;
-    this.lastTick = 0;
     this.ctx = ctx;
-    this.mass = 500;
+    this.lastTick = 0;
+    this.radius = 10;
+    this.x = 50;
+    this.y = 50;
+    // this.dX = 0;
+    // this.dY = 0;
+    this.vX = 0;
+    this.vY = 0;
+    this.aX = 0;
+    this.aY = 9.81;
 
     this.render = function () {
         this.update();
 
         this.ctx.fillStyle = 'red';
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2, true);
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
         this.ctx.fill();
     }
 
@@ -126,10 +128,22 @@ function Ball(ctx) {
             ellapsed = this.lastTick != 0 ? currentTime - this.lastTick : 0,
             progress = ellapsed / 1000;
 
-
-        this.x += (this.dX * progress) + (wind * progress);
-        this.y += this.dY * progress;
+        this.x += (this.vX * progress);
+        this.y = meterToPixel(pixelToMeter(this.y) + this.vY * progress + 0.5*this.aY * progress**2);
 
         this.lastTick = currentTime;
     }
 }
+
+function pixelToMeter(px) {
+    return px/1000;
+}
+
+function meterToPixel(m) {
+    return m*1000;
+}
+
+// function Force() {
+//     this.x = 0;
+//     this.y = 0;
+// }
